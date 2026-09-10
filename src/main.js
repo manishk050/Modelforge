@@ -178,15 +178,17 @@ function wire() {
         await puter.auth.signOut();
         await refreshAccount();
         render();
-        toast('Signed out');
         return;
       }
   
-      await puter.ui.authenticateWithPuter();
+      toast('Puter will authenticate when you use an AI feature.');
+  
+      // Trigger Puter authentication through an actual Puter API call.
+      // Puter handles authentication automatically for websites.
+      await puter.ai.listModels();
   
       await refreshAccount();
       render();
-      toast('Signed in successfully');
   
     } catch (e) {
       console.error('Puter authentication failed:', e);
