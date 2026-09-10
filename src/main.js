@@ -172,29 +172,31 @@ function wire() {
   });
   document.querySelectorAll('[data-remove]').forEach(el=>el.addEventListener('click',()=>{state.attachments.splice(Number(el.dataset.remove),1);render();}));
   document.querySelector('#compareBtn')?.addEventListener('click', compareLastPrompt);
-    document.querySelector('#accountBtn')?.addEventListener('click', async () => {
+  document.querySelector('#accountBtn')?.addEventListener('click', async () => {
     try {
       if (puter.auth.isSignedIn()) {
-        refreshAccount();
+        await puter.auth.signOut();
+        await refreshAccount();
+        render();
+        toast('Signed out');
         return;
       }
-
-      const result = await puter.auth.signIn();
-
-      console.log('Puter sign-in result:', result);
-
+  
+      await puter.ui.authenticateWithPuter();
+  
       await refreshAccount();
       render();
+      toast('Signed in successfully');
+  
     } catch (e) {
-      console.error('Puter sign-in failed:', e);
-
-      const code = e?.error || e?.code || 'unknown_error';
+      console.error('Puter authentication failed:', e);
+  
+      const code = e?.error || e?.code || 'authentication_failed';
       const message = e?.msg || e?.message || String(e);
-
+  
       toast(`${code}: ${message}`);
     }
   });
-
   refreshAccount();
 }
 function cycleReasoning(){ const vals=['none','low','medium','high','xhigh']; const i=vals.indexOf(state.reasoning); state.reasoning=vals[(i+1)%vals.length]; state.maximumMode=false; render(); }
