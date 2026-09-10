@@ -173,32 +173,44 @@ function wire() {
   document.querySelectorAll('[data-remove]').forEach(el=>el.addEventListener('click',()=>{state.attachments.splice(Number(el.dataset.remove),1);render();}));
   document.querySelector('#compareBtn')?.addEventListener('click', compareLastPrompt);
   document.querySelector('#accountBtn')?.addEventListener('click', async () => {
-    try {
-      if (puter.auth.isSignedIn()) {
-        await puter.auth.signOut();
-        await refreshAccount();
-        render();
-        return;
-      }
-  
-      toast('Puter will authenticate when you use an AI feature.');
-  
-      // Trigger Puter authentication through an actual Puter API call.
-      // Puter handles authentication automatically for websites.
-      await puter.ai.listModels();
-  
+  try {
+    if (puter.auth.isSignedIn()) {
+      puter.auth.signOut();
       await refreshAccount();
       render();
-  
-    } catch (e) {
-      console.error('Puter authentication failed:', e);
-  
-      const code = e?.error || e?.code || 'authentication_failed';
-      const message = e?.msg || e?.message || String(e);
-  
-      toast(`${code}: ${message}`);
+      return;
     }
-  });
+
+    // Pre-open Puter's named authentication window during the
+    // user's click so Edge treats it as user-initiated.
+    const authPopup = window.open(
+      'about:blank',
+      'Puter',
+      'toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=no,copyhistory=no,width=600,height=700'
+    );
+
+    if (!authPopup) {
+      throw {
+        error: 'popup_blocked',
+        msg: 'Edge blocked the authentication window. Allow pop-ups for this site and try again.'
+      };
+    }
+
+    await puter.auth.signIn({ request_auth: true });
+
+    await refreshAccount();
+    render();
+    toast('Signed in successfully');
+  } catch (e) {
+    console.error('Puter authentication failed:', e);
+
+    const code = e?.error || e?.code || 'authentication_failed';
+    const message = e?.msg || e?.message || String(e);
+
+    toast(`${code}: ${message}`);
+  }
+});
+  
   refreshAccount();
 }
 function cycleReasoning(){ const vals=['none','low','medium','high','xhigh']; const i=vals.indexOf(state.reasoning); state.reasoning=vals[(i+1)%vals.length]; state.maximumMode=false; render(); }
